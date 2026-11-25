@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лабораторная работа №1 — Вариант 9</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f0f2f5; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 24px; }
+        header h2 { color: #0d6efd; margin-bottom: 5px; }
+        header p { color: #6c757d; margin-top: 0; }
+        .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 24px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+        h5 { margin-top: 0; margin-bottom: 14px; font-size: 1.1rem; color: #212529; }
+        .hint { font-size: 0.85rem; color: #6c757d; margin-top: 8px; line-height: 1.4; }
+        .slider-group { margin-bottom: 12px; }
+        .slider-label { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 4px; }
+        .badge { padding: 2px 8px; border-radius: 6px; color: #fff; font-size: 0.85rem; }
+        .bg-red { background: #dc3545; } .text-red { color: #dc3545; }
+        .bg-green { background: #198754; } .text-green { color: #198754; }
+        .bg-blue { background: #0d6efd; } .text-blue { color: #0d6efd; }
+        input[type="range"] { width: 100%; cursor: pointer; }
+        input[type="file"], input[type="text"] { width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 0.95rem; }
+        hr { border: 0; border-top: 1px solid #e9ecef; margin: 20px 0; }
+        .captcha-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: end; }
+        @media (max-width: 768px) { .captcha-row { grid-template-columns: 1fr; } }
+        .captcha-box { display: flex; align-items: center; gap: 10px; }
+        .captcha-box img { border: 1px solid #ced4da; border-radius: 6px; }
+        .btn-refresh { text-decoration: none; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 6px; color: #495057; background: #f8f9fa; font-weight: bold; }
+        .btn-refresh:hover { background: #e2e6ea; }
+        .btn-submit { width: 100%; padding: 11px; background: #0d6efd; color: #fff; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+        .btn-submit:hover { background: #0b5ed7; }
+        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-weight: 500; }
+        .alert-danger { background: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
+        .alert-success { background: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
+        .result-box { text-align: center; }
+        .img-preview { max-height: 360px; max-width: 100%; border-radius: 8px; border: 1px solid #dee2e6; }
+        .hist-preview { width: 100%; border-radius: 8px; border: 1px solid #dee2e6; margin-top: 16px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h2>Изменение интенсивности цветовых карт изображения</h2>
+        <p>Лабораторная работа №1 • Вариант 9</p>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <form method="POST" enctype="multipart/form-data">
+            <div class="grid-2">
+                <div>
+                    <h5>1. Исходное изображение</h5>
+                    <input type="file" id="image" name="image" accept="image/*" required>
+                    <p class="hint">Коэффициент <b>1.0</b> оставляет канал без изменений, <b>0.0</b> — полностью убирает цвет, <b>2.0</b> — усиливает интенсивность в 2 раза.</p>
+                </div>
+
+                <div>
+                    <h5>2. Настройка интенсивности каналов</h5>
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span class="text-red">Красный канал (Red):</span>
+                            <span id="r_val" class="badge bg-red">{{ r_factor }}</span>
+                        </div>
+                        <input type="range" id="r_factor" name="r_factor" min="0" max="2.5" step="0.1" value="{{ r_factor }}" oninput="document.getElementById('r_val').innerText = this.value">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span class="text-green">Зелёный канал (Green):</span>
+                            <span id="g_val" class="badge bg-green">{{ g_factor }}</span>
+                        </div>
+                        <input type="range" id="g_factor" name="g_factor" min="0" max="2.5" step="0.1" value="{{ g_factor }}" oninput="document.getElementById('g_val').innerText = this.value">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span class="text-blue">Синий канал (Blue):</span>
+                            <span id="b_val" class="badge bg-blue">{{ b_factor }}</span>
+                        </div>
+                        <input type="range" id="b_factor" name="b_factor" min="0" max="2.5" step="0.1" value="{{ b_factor }}" oninput="document.getElementById('b_val').innerText = this.value">
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="captcha-row">
+                <div>
+                    <h5>3. Проверка на робота:</h5>
+                    <div class="captcha-box">
+                        <img src="data:image/png;base64,{{ captcha_img }}" alt="Капча">
+                        <a href="/" class="btn-refresh" title="Обновить капчу">↻</a>
+                    </div>
+                </div>
+                <div>
+                    <label for="captcha" style="display:block; margin-bottom:6px; font-weight:600;">Введите символы с картинки:</label>
+                    <input type="text" id="captcha" name="captcha" placeholder="Например: VQCDD" required autocomplete="off">
+                </div>
+                <div>
+                    <button type="submit" class="btn-submit">Обработать изображение</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if result %}
+    <div class="card">
+        <h3 style="text-align:center; margin-top:0;">Результаты обработки</h3>
+        <div class="grid-2">
+            <div class="result-box">
+                <h4>Исходное изображение</h4>
+                <img src="data:image/png;base64,{{ result.orig_img }}" class="img-preview" alt="Исходное">
+                <img src="data:image/png;base64,{{ result.orig_hist }}" class="hist-preview" alt="Гистограмма исходного">
+            </div>
+            <div class="result-box">
+                <h4 style="color:#0d6efd;">Новое (R: {{ result.r }}, G: {{ result.g }}, B: {{ result.b }})</h4>
+                <img src="data:image/png;base64,{{ result.mod_img }}" class="img-preview" alt="Изменённое">
+                <img src="data:image/png;base64,{{ result.mod_hist }}" class="hist-preview" alt="Гистограмма нового">
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+</body>
+</html>
